@@ -31,6 +31,21 @@ type SquareProps = {
  * React.Component<Props,State>は「React.Componentの引数にはProps型とState型が利用可能」
  */
 class Square extends React.Component<SquareProps, SquareState> {
+    /**
+     * Square はもはやゲームの状態を管理しなくなったので、Square の constructor を削除
+     * 
+        // Propsの引数
+        constructor(props: SquareProps) {
+            // 全ての親クラスのコンストラクタ継承する必要がある。
+            super(props);
+            // State の定義にあった宣言。コンポーネント内で、This.state を持つことで
+            // 状態を持つことができる。（DOM操作 → value で、値を取得して上書きできる。）
+            //  → この場合のState は、プライベート関数になる。 → set、get で取得。
+            this.state = {
+                value: null,
+            };
+        }
+     */
     render() {
         return (
             <button
@@ -39,10 +54,15 @@ class Square extends React.Component<SquareProps, SquareState> {
                 onClick={
                     // call this.handleClick(i)
                     () => this.props.onClick()
+                    // プライベート関数に値をいれる。
+                    // セッターを呼び出すと再レンダリングされる。
+                    // this.setState({ value: 'X' });
                 }
             >
                 {/* 文字を表示する欄 */}
                 {this.props.value}
+                {/* Getter を呼びだす。 */}
+                {/* {this.state.value} */}
             </button>
         );
     }
