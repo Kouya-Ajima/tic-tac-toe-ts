@@ -101,6 +101,7 @@ type HistoryData = {
 type GameState = {
     history: HistoryData[];
     xIsNext: boolean;
+    stepNumber: number;
 };
 /**
  * ゲーム全体の進行を制御するコンポーネントです。
@@ -117,6 +118,7 @@ class Game extends React.Component<{}, GameState> {
                 },
             ],
             xIsNext: true,
+            stepNumber: 0,
         };
     }
 
@@ -125,9 +127,9 @@ class Game extends React.Component<{}, GameState> {
      * @param i 配列から文字列を取りだすインデックス
      */
     handleClick(i: number) {
-        // Stateの配列のコピーを作成
-        const history = this.state.history;
-        const current = history[history.length - 1];
+        // Stateの配列のコピーを作成 → スライスを使って、移動した履歴以降の配列を削除する
+        const history = this.state.history.slice(0, this.state.stepNumber + 1);
+        const current = history[this.state.stepNumber];
         const squares = current.squares.slice();
         if (calculateWinner(squares) || squares[i]) {
             return;
@@ -144,6 +146,20 @@ class Game extends React.Component<{}, GameState> {
             ]),
             // 真偽値を反転させて上書き
             xIsNext: !this.state.xIsNext,
+            // History の長さで上書き
+            stepNumber: history.length,
+        });
+    }
+
+    /**
+     *  履歴にジャンプして、配列の値を上書きする
+     * @param move 履歴のインデックス
+     */
+    jumpTo(step: number) {
+        this.setState({
+            stepNumber: step,
+            // 更新しようとしている stepNumber の値が偶数だった場合は xIsNext を true に設定
+            xIsNext: step % 2 === 0,
         });
     }
 
@@ -151,6 +167,18 @@ class Game extends React.Component<{}, GameState> {
         const history = this.state.history;
         const current = history[history.length - 1];
         const winner = calculateWinner(current.squares);
+        // step が history 内の現在の要素を参照し、move が現在の要素のインデックスを参照
+        const moves = history.map((step, move) => {
+            // Move があるかどうか。
+            const desc = move ? 'Go to move #' + move : 'Go to game start';
+            return (
+                // 履歴は、その配列１つ１つが、一意なキーを持つ -> move: number 部分
+                // これで警告がでなくなる。
+                <li key={move}>
+                    <button onClick={() => this.jumpTo(move)}>{desc}</button>
+                </li>
+            );
+        });
         let status;
         if (winner) {
             // is not null ?
