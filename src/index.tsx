@@ -10,16 +10,16 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
 
-/** State で表示する文字列や空白を定義 */
-type SquareState = {
-    value: string | null;
-};
-
 /** 渡される数字を定義 */
 type SquareProps = {
-    value: number;
-    squares: string[];
+    value: string | null;
     onClick: () => void;
+};
+
+/** State で表示する文字列や空白を定義 */
+type BoardState = {
+    squares: Array<string>;
+    xIsNext: boolean;
 };
 
 /**
@@ -30,23 +30,20 @@ type SquareProps = {
  * React.Component に 型をジェネリクスとして指定する。
  *      → React.Componentは、props を実装しているため、型を指定したクラスを渡す。
  * React.Component<Props,State>は「React.Componentの引数にはProps型とState型が利用可能」
+ *
+ * → Square を関数コンポーネントに書き換え
+ *   → render メソッドだけを有して自分の state を持たないコンポーネントを、よりシンプルに書く
+ * returnは不要です。<button>~</button>がひとまとまりの返り値、JSX要素とみなされる
  */
-class Square extends React.Component<SquareProps, SquareState> {
-    render() {
-        return (
-            <button
-                className='square'
-                // Square が Board の state を更新できるようにする必要があります。
-                onClick={
-                    // call this.handleClick(i)
-                    () => this.props.onClick()
-                }
-            >
-                {/* 文字を表示する欄 */}
-                {this.props.value}
-            </button>
-        );
-    }
+function Square(props: SquareProps) {
+    return (
+        // Square が Board の state を更新できるようにする必要があります。
+        // call this.handleClick(i)
+        <button className='square' onClick={props.onClick}>
+            {/* 文字を表示する欄 */}
+            {props.value}
+        </button>
+    );
 }
 
 /**
@@ -55,12 +52,13 @@ class Square extends React.Component<SquareProps, SquareState> {
  * state を親コンポーネントにリフトアップ (lift up) する
  *  → Square コンポーネントは制御されたコンポーネント (controlled component) になった
  */
-class Board extends React.Component<SquareProps, SquareState> {
-    constructor(props: SquareProps) {
+class Board extends React.Component<{}, BoardState> {
+    constructor(props: {}) {
         super(props);
+        // 初期値を格納
         this.state = {
-            // 9個の空白を用意しておく → 初期化
-            squares: Array(9).fill(null),
+            squares: Array(9).fill(null), // 9個の空白を用意しておく
+            xIsNext: true,
         };
     }
 
@@ -71,11 +69,18 @@ class Board extends React.Component<SquareProps, SquareState> {
     handleClick(i: number) {
         // Stateの配列のコピーを作成
         const squares = this.state.squares.slice();
+        if (calculateWinner(squares) || squares[i]) {
+            return;
+        }
         // ユーザーのマークを格納
-        squares[i] = 'X';
-        // State にコピー設定して、上書きする。 → 変更完了
-        //  → イミュータブルにした方が拡張性が高くなる。
-        this.setState({ squares: squares });
+        squares[i] = this.state.xIsNext ? 'X' : 'O';
+        this.setState({
+            // State にコピー設定して、上書きする。 → 変更完了
+            //  → イミュータブルにした方が拡張性が高くなる。
+            squares: squares,
+            // 真偽値を反転させて上書き
+            xIsNext: !this.state.xIsNext,
+        });
     }
 
     /**Square に、Props を渡す */
@@ -94,7 +99,14 @@ class Board extends React.Component<SquareProps, SquareState> {
     }
 
     render() {
-        const status = 'Next player: X';
+        const winner = calculateWinner(this.state.squares);
+        let status;
+        if (winner) {
+            // is not null ?
+            status = 'Next player: ' + winner;
+        } else {
+            status = 'Next player: ' + (this.state.xIsNext ? 'X' : 'O');
+        }
 
         return (
             <div>
@@ -138,6 +150,30 @@ class Game extends React.Component {
             </div>
         );
     }
+}
+
+function calculateWinner(squares: string[]) {
+    const lines = [
+        [0, 1, 2],
+        [3, 4, 5],
+        [6, 7, 8],
+        [0, 3, 6],
+        [1, 4, 7],
+        [2, 5, 8],
+        [0, 4, 8],
+        [2, 4, 6],
+    ];
+    for (let i = 0; i < lines.length; i++) {
+        const [a, b, c] = lines[i];
+        if (
+            squares[a] &&
+            squares[a] === squares[b] &&
+            squares[a] === squares[c]
+        ) {
+            return squares[a];
+        }
+    }
+    return null;
 }
 
 // ========================================
