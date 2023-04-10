@@ -18,6 +18,7 @@ type SquareState = {
 /** 渡される数字を定義 */
 type SquareProps = {
     value: number;
+    squares: string[];
     onClick: () => void;
 };
 
@@ -52,8 +53,9 @@ class Square extends React.Component<SquareProps, SquareState> {
  * 3x3の9つのマスの表示を担うコンポーネントです。
  * propsから受け取る配列の情報をもとに、9つのSquareたちに盤面の状態を表示させます。
  * state を親コンポーネントにリフトアップ (lift up) する
+ *  → Square コンポーネントは制御されたコンポーネント (controlled component) になった
  */
-class Board extends React.Component {
+class Board extends React.Component<SquareProps, SquareState> {
     constructor(props: SquareProps) {
         super(props);
         this.state = {
@@ -61,14 +63,29 @@ class Board extends React.Component {
             squares: Array(9).fill(null),
         };
     }
+
+    /**
+     *クリックイベントで、文字列を配列に格納してレンダリング、同期する
+     * @param i 配列から文字列を取りだすインデックス
+     */
+    handleClick(i: number) {
+        // Stateの配列のコピーを作成
+        const squares = this.state.squares.slice();
+        // ユーザーのマークを格納
+        squares[i] = 'X';
+        // State にコピー設定して、上書きする。 → 変更完了
+        //  → イミュータブルにした方が拡張性が高くなる。
+        this.setState({ squares: squares });
+    }
+
     /**Square に、Props を渡す */
     renderSquare(i: number) {
         // 配列のI 番目を渡す。
         return (
             // Props を渡す
             <Square
-                // 表示する文字列が格納された配列を渡す。
-                value={this.state.squares[i]}
+                // 表示する文字列が格納された配列を渡す。 → 変更があると自動的に再レンダーされる。
+                value={this.state.squares[i]} // 配列の 2番めの X など。
                 // 型定義にもonClick を追加する。
                 // onClick プロパティはマス目がクリックされた時に Square が呼び出すためのもの
                 onClick={() => this.handleClick(i)}
