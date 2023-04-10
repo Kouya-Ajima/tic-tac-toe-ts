@@ -10,6 +10,8 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
 
+type SquareState = 'O' | 'X' | null;
+
 /** 渡される数字を定義 */
 type SquareProps = {
     value: string | null;
@@ -40,12 +42,10 @@ function Square(props: SquareProps) {
     );
 }
 
-type SquareType = 'O' | 'X' | null;
-
 /** State で表示する文字列や空白を定義 */
-type BoardProps = {
-    squares: Array<SquareType>;
-    onClick: (i: number) => void;
+type BoardState = {
+    squares: Array<string>;
+    xIsNext: boolean;
 };
 
 /**
@@ -54,7 +54,37 @@ type BoardProps = {
  * state を親コンポーネントにリフトアップ (lift up) する
  *  → Square コンポーネントは制御されたコンポーネント (controlled component) になった
  */
-class Board extends React.Component<BoardProps> {
+class Board extends React.Component<{}, BoardState> {
+    constructor(props: {}) {
+        super(props);
+        // 初期値を格納
+        this.state = {
+            squares: Array(9).fill(null), // 9個の空白を用意しておく
+            xIsNext: true,
+        };
+    }
+
+    /**
+     *クリックイベントで、文字列を配列に格納してレンダリング、同期する
+     * @param i 配列から文字列を取りだすインデックス
+     */
+    handleClick(i: number) {
+        // Stateの配列のコピーを作成
+        const squares = this.state.squares.slice();
+        if (calculateWinner(squares) || squares[i]) {
+            return;
+        }
+        // ユーザーのマークを格納
+        squares[i] = this.state.xIsNext ? 'X' : 'O';
+        this.setState({
+            // State にコピー設定して、上書きする。 → 変更完了
+            //  → イミュータブルにした方が拡張性が高くなる。
+            squares: squares,
+            // 真偽値を反転させて上書き
+            xIsNext: !this.state.xIsNext,
+        });
+    }
+
     /**Square に、Props を渡す */
     renderSquare(i: number) {
         // 配列のI 番目を渡す。
@@ -62,18 +92,27 @@ class Board extends React.Component<BoardProps> {
             // Props を渡す
             <Square
                 // 表示する文字列が格納された配列を渡す。 → 変更があると自動的に再レンダーされる。
-                value={this.props.squares[i]} // 配列の 2番めの X など。
+                value={this.state.squares[i]} // 配列の 2番めの X など。
                 // 型定義にもonClick を追加する。
                 // onClick プロパティはマス目がクリックされた時に Square が呼び出すためのもの
-                onClick={() => this.props.onClick(i)}
+                onClick={() => this.handleClick(i)}
             />
         );
     }
 
     render() {
+        const winner = calculateWinner(this.state.squares);
+        let status;
+        if (winner) {
+            // is not null ?
+            status = 'Next player: ' + winner;
+        } else {
+            status = 'Next player: ' + (this.state.xIsNext ? 'X' : 'O');
+        }
+
         return (
             <div>
-                {/* <div className='status'>{status}</div> */}
+                <div className='status'>{status}</div>
                 <div className='board-row'>
                     {this.renderSquare(0)}
                     {this.renderSquare(1)}
@@ -94,81 +133,20 @@ class Board extends React.Component<BoardProps> {
     }
 }
 
-type HistoryData = {
-    squares: Array<SquareType>;
-};
-
-type GameState = {
-    history: HistoryData[];
-    xIsNext: boolean;
-};
 /**
  * ゲーム全体の進行を制御するコンポーネントです。
  * 「盤面の状態」はこのコンポーネントが管理します。
  * また、操作に応じて過去の手番への巻き戻しも行います。
  */
-class Game extends React.Component<{}, GameState> {
-    constructor(props: {}) {
-        super(props);
-        this.state = {
-            history: [
-                {
-                    squares: Array(9).fill(null),
-                },
-            ],
-            xIsNext: true,
-        };
-    }
-
-    /**
-     *クリックイベントで、文字列を配列に格納してレンダリング、同期する
-     * @param i 配列から文字列を取りだすインデックス
-     */
-    handleClick(i: number) {
-        // Stateの配列のコピーを作成
-        const history = this.state.history;
-        const current = history[history.length - 1];
-        const squares = current.squares.slice();
-        if (calculateWinner(squares) || squares[i]) {
-            return;
-        }
-        // ユーザーのマークを格納
-        squares[i] = this.state.xIsNext ? 'X' : 'O';
-        this.setState({
-            // State にコピー設定して、上書きする。 → 変更完了
-            //  → イミュータブルにした方が拡張性が高くなる。
-            history: history.concat([
-                {
-                    squares: squares,
-                },
-            ]),
-            // 真偽値を反転させて上書き
-            xIsNext: !this.state.xIsNext,
-        });
-    }
-
+class Game extends React.Component {
     render() {
-        const history = this.state.history;
-        const current = history[history.length - 1];
-        const winner = calculateWinner(current.squares);
-        let status;
-        if (winner) {
-            // is not null ?
-            status = 'Next player: ' + winner;
-        } else {
-            status = 'Next player: ' + (this.state.xIsNext ? 'X' : 'O');
-        }
-
         return (
             <div className='game'>
                 <div className='game-board'>
-                    <Board
-                        squares={current.squares}
-                        onClick={(i: number) => this.handleClick(i)}
-                    />
+                    <Board />
                 </div>
                 <div className='game-info'>
-                    <div>{status}</div>
+                    <div>{/* status */}</div>
                     <ol>{/* TODO */}</ol>
                 </div>
             </div>
@@ -176,7 +154,7 @@ class Game extends React.Component<{}, GameState> {
     }
 }
 
-function calculateWinner(squares: Array<SquareType>) {
+function calculateWinner(squares: string[]) {
     const lines = [
         [0, 1, 2],
         [3, 4, 5],
