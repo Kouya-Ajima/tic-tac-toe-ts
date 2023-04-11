@@ -4,7 +4,9 @@
  * render() は、そのクラスがXMLで呼ばれた際に呼び出される関数。
  *  JSXは、HTMLやJavaScriptの全てを使うことができる。
  *  → JavaScript の式も JSX 内で中括弧に囲んで記入することができます。
- *
+ *  propsは読み取り専用。stateの値も渡して良い。
+ * state はカプセル化している。更新は、独立している
+ * render は、変更点のみを更新する。
  */
 import React from 'react';
 import ReactDOM from 'react-dom/client';
@@ -73,7 +75,6 @@ class Board extends React.Component<BoardProps> {
     render() {
         return (
             <div>
-                {/* <div className='status'>{status}</div> */}
                 <div className='board-row'>
                     {this.renderSquare(0)}
                     {this.renderSquare(1)}
@@ -188,17 +189,62 @@ class Game extends React.Component<{}, GameState> {
         }
 
         return (
-            <div className='game'>
-                <div className='game-board'>
-                    <Board
-                        squares={current.squares}
-                        onClick={(i: number) => this.handleClick(i)}
-                    />
+            <div>
+                <div className='clock'>
+                    <Clock />
                 </div>
-                <div className='game-info'>
-                    <div>{status}</div>
-                    <ol>{moves}</ol>
+                <div className='game'>
+                    <div className='game-board'>
+                        <Board
+                            squares={current.squares}
+                            onClick={(i: number) => this.handleClick(i)}
+                        />
+                    </div>
+                    <div className='game-info'>
+                        <div>{status}</div>
+                        <ol>{moves}</ol>
+                    </div>
                 </div>
+            </div>
+        );
+    }
+}
+
+type clockState = {
+    date: Date;
+};
+
+class Clock extends React.Component<{}, clockState> {
+    constructor(props: {}) {
+        super(props);
+        this.state = {
+            date: new Date(),
+        };
+    }
+
+    componentDidMount(): void {
+        setInterval(() => this.tick(), 1000);
+        // this.timerID = setInterval(() => this.tick(), 1000);
+    }
+
+    componentWillUnmount(): void {
+        // clearInterval(this.timerID);
+    }
+
+    tick() {
+        this.setState({
+            date: new Date(),
+        });
+    }
+
+    render() {
+        return (
+            <div>
+                <h1>Welcom tic-tac-toe-ts!</h1>
+                <h2>
+                    It is
+                    {this.state.date.toLocaleString()}
+                </h2>
             </div>
         );
     }

@@ -10,6 +10,10 @@ ul {
     padding-left: 30px;
 }
 
+.clock {
+    margin-bottom: 30px;
+}
+
 .board-row:after {
     clear: both;
     content: '';
