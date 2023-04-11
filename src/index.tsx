@@ -144,10 +144,10 @@ class Game extends React.Component<{}, GameState> {
                     squares: squares,
                 },
             ]),
-            // 真偽値を反転させて上書き
-            xIsNext: !this.state.xIsNext,
             // History の長さで上書き
             stepNumber: history.length,
+            // 真偽値を反転させて上書き
+            xIsNext: !this.state.xIsNext,
         });
     }
 
@@ -182,7 +182,7 @@ class Game extends React.Component<{}, GameState> {
         let status;
         if (winner) {
             // is not null ?
-            status = 'Next player: ' + winner;
+            status = 'winner: ' + winner;
         } else {
             status = 'Next player: ' + (this.state.xIsNext ? 'X' : 'O');
         }
@@ -197,7 +197,7 @@ class Game extends React.Component<{}, GameState> {
                 </div>
                 <div className='game-info'>
                     <div>{status}</div>
-                    <ol>{/* TODO */}</ol>
+                    <ol>{moves}</ol>
                 </div>
             </div>
         );
