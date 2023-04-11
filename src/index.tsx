@@ -125,6 +125,8 @@ class Game extends React.Component<{}, GameState> {
 
     /**
      *クリックイベントで、文字列を配列に格納してレンダリング、同期する
+     イベントのメソッドの記述には、handle 頭文字につけるのが慣習。キャメルケースで書く。
+     e.preventDefault(); のように、サブミットで送る場合のボタンキャンセルは明示する。
      * @param i 配列から文字列を取りだすインデックス
      */
     handleClick(i: number) {
