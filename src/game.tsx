@@ -21,7 +21,7 @@ type GameState = {
  * 「盤面の状態」はこのコンポーネントが管理します。
  * また、操作に応じて過去の手番への巻き戻しも行います。
  */
-class Game extends React.Component<{}, GameState> {
+export default class Game extends React.Component<{}, GameState> {
     constructor(props: {}) {
         super(props);
         this.state = {
@@ -83,12 +83,13 @@ class Game extends React.Component<{}, GameState> {
         const current = history[history.length - 1];
         const winner = calculateWinner(current.squares);
         // step が history 内の現在の要素を参照し、move が現在の要素のインデックスを参照
+        // JSXの For 文の書き方。 For と Map を用いる。
         const moves = history.map((step, move) => {
-            // Move があるかどうか。
+            // Move があるかどうか。→ ０の場合、Falseとみなされる。
             const desc = move ? 'Go to move #' + move : 'Go to game start';
             return (
                 // 履歴は、その配列１つ１つが、一意なキーを持つ -> move: number 部分
-                // これで警告がでなくなる。
+                // これで警告がでなくなる。 → move がインデックスを示しているため。
                 <li key={move}>
                     <button onClick={() => this.jumpTo(move)}>{desc}</button>
                 </li>
@@ -123,5 +124,3 @@ class Game extends React.Component<{}, GameState> {
         );
     }
 }
-
-export default Game;
